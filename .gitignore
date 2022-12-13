@@ -1,0 +1,10 @@
+/function_cloud_go
+/function_cloud_js
+
+/function_cloud/telegraf.conf
+/function_cloud_js/telegraf.conf
+
+/function_cloud/telegraf
+/function_cloud_js/telegraf.conf
+
+function_cloud_go/
