@@ -3,16 +3,17 @@ telegraf_version="1.24.4"
 telegraf_zip_name="telegraf.tar.gz"
 default_telegraf_folder="./telegraf-${telegraf_version}/usr/bin/telegraf"
 function_folder="./function_cloud"
+function_name_hash=$RANDOM | md5sum | head -c 10
 function_name="metrics_gcp"
 
 # Prints usage
 # Output:
 #   Help usage
 function show_help () {
-    echo -e "Usage: ./run.sh --listener_url=<listener_url> --token=<token> --region=<region> --function_name=<function_name> --metric_types=<metric_types>"
+    echo -e "Usage: ./run.sh --listener_url=<listener_url> --token=<token> --gcp_region=<gcp_region> --function_name=<function_name> --metric_types=<metric_types>"
     echo -e " --listener_url=<listener_url>       Logz.io Listener URL (You can check it here https://docs.logz.io/user-guide/accounts/account-region.html)"
     echo -e " --token=<token>                     Logz.io token of the account you want to ship to."
-    echo -e " --region=<region>                   Region where you want to upload Cloud Funtion."
+    echo -e " --gcp_region=<gcp_region>           Region where you want to upload Cloud Funtion."
     echo -e " --function_name=<function_name>     Function name will be using as Cloud Function name and prefix for services."
     echo -e " --metric_types=<metric_types>       Will send metrics that match the Google metrics type. Array of strings splitted by comma. Detailed list you can find https://cloud.google.com/monitoring/api/metrics_gcp"
     echo -e " --help                              Show usage"
@@ -23,9 +24,8 @@ function show_help () {
 #   Client's arguments ($@)
 # Output:
 #   listener_url - Logz.io Listener URL
-#   token - Logz.io token of the account user want to ship to.
-#   metric_type - Region where user want to upload Cloud Funtion.
-#   type -  Log type. Help classify logs into different classifications
+#   token - Logz.io Token of the account user want to ship to.
+#   metric_type - Metrics that match the Google metrics type. Array of strings splitted by comma..
 # Error:
 #   Exit Code 1
 
@@ -61,19 +61,20 @@ function get_arguments () {
                 fi
                 echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] metric_types = $metric_types" 
                 ;;
-            --region=*)
-                region=$(echo "$1" | cut -d "=" -f2)
-                if [[ "$region" = "" ]]; then
+            --gcp_region=*)
+                gcp_region=$(echo "$1" | cut -d "=" -f2)
+                if [[ "$gcp_region" = "" ]]; then
                     echo -e "\033[0;31mrun.sh (1): No Google Cloud Region specified!\033[0;37m"
                     exit 1
                 fi
-                echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] region = $region" 
+                echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] gcp_region = $gcp_region" 
                 ;;
             --function_name=*)
                 function_name=$(echo "$1" | cut -d "=" -f2)
                 if [[ "$function_name" = "" ]]; then
                     echo -e "\033[0;31mrun.sh (1): No function name specified!\033[0;37m"
                     #Define default
+					function_name="metrics_gcp"
                 fi
                 echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] function_name = $function_name" 
                 ;;
@@ -105,7 +106,7 @@ function is_gcloud_install(){
     then
         return
     else
-        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to download telegraf  ..."
+        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to get gcloud CLI. Please install Gcloud and login to proper account from where you want to send metrics..."
         exit 1	
     fi
 }
@@ -127,13 +128,13 @@ function check_validation () {
         is_error=true
         echo -e "\033[0;31mrun.sh (1): Logz.io Token is missing please rerun the script with the relevant parameters\033[0;37m"
     fi
-    if [[ -z "$region" ]]; then
+    if [[ -z "$gcp_region" ]]; then
         is_error=true
         echo -e "\033[0;31mrun.sh (1): Region for Google Cloud Platform is missing please rerun the script with the relevant parameters\033[0;37m"
     fi
     if [[ -z "$metric_types" ]]; then
         is_error=true
-        echo -e "\033[0;31mrun.sh (1): Region for Google Cloud Platform is missing please rerun the script with the relevant parameters\033[0;37m"
+        echo -e "\033[0;31mrun.sh (1): Metric type is missing please rerun the script with the relevant parameters\033[0;37m"
     fi
   
     if $is_error; then
@@ -308,7 +309,7 @@ function create_function(){
 
     function_name_sufix="${function_name}_func_logzio"
 
-    gcloud functions deploy $function_name_sufix --region=$region --entry-point=LogzioHandler --trigger-http --runtime=go116 --service-account=${account_name}@${project_id}.iam.gserviceaccount.com --source=./function_cloud  --no-allow-unauthenticated
+    gcloud functions deploy $function_name_sufix --region=$gcp_region --entry-point=LogzioHandler --trigger-http --runtime=go116 --service-account=${account_name}@${project_id}.iam.gserviceaccount.com --source=./function_cloud  --no-allow-unauthenticated
     if [[ $? -ne 0 ]]; then
         echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to create Cloud Function."
         exit 1
@@ -375,7 +376,7 @@ function add_scheduler(){
     
     job_name="${function_name}_job"
 
-    gcloud scheduler jobs create http $job_name --location="$region" --schedule="* * * * *" --uri="https://$region-$project_id.cloudfunctions.net/$function_name" --http-method=GET --oidc-service-account-email=${account_name}@${project_id}.iam.gserviceaccount.com
+    gcloud scheduler jobs create http $job_name --location="$gcp_region" --schedule="* * * * *" --uri="https://$gcp_region-$project_id.cloudfunctions.net/$function_name" --http-method=GET --oidc-service-account-email=${account_name}@${project_id}.iam.gserviceaccount.com
     if [[ $? -ne 0 ]]; then
         echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to create Job Scheduler."
         exit 1
