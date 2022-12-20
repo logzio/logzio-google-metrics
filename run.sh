@@ -4,7 +4,7 @@ telegraf_zip_name="telegraf.tar.gz"
 default_telegraf_folder="./telegraf-${telegraf_version}/usr/bin/telegraf"
 function_folder="./function_cloud"
 function_name_hash=$RANDOM | md5sum | head -c 10
-function_name="metrics_gcp"
+function_name="metrics_gcp_$function_name_hash"
 
 # Prints usage
 # Output:
@@ -74,7 +74,7 @@ function get_arguments () {
                 if [[ "$function_name" = "" ]]; then
                     echo -e "\033[0;31mrun.sh (1): No function name specified!\033[0;37m"
                     #Define default
-					function_name="metrics_gcp"
+                    function_name="metrics_gcp_$function_name_hash"
                 fi
                 echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] function_name = $function_name" 
                 ;;
