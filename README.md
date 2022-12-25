@@ -44,7 +44,7 @@ chmod +x run.sh
 3. Run the code:
 
 ```
-./run.sh --listener_url=<listener_url> --token=<token> --region=<region> --function_name=<function_name> --metric_types=<metric_types>
+./run.sh --listener_url=<listener_url> --token=<token> --gcp_region=<gcp_region> --function_name=<function_name> --metric_types=<metric_types>
 ```
 
 Replace the variables as per the table below:

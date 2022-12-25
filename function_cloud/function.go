@@ -2,6 +2,7 @@
 package p
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"os/exec"
@@ -9,20 +10,18 @@ import (
 
 func LogzioHandler(w http.ResponseWriter, r *http.Request) {
 
-	app := "./telegraf"
+	cmd := exec.Command("./telegraf", "--config", "telegraf.conf", "--once")
 
-	arg0 := "--config"
-	arg1 := "telegraf.conf"
-	arg2 := "--once"
+	var out bytes.Buffer
+	var stderr bytes.Buffer
 
-	cmd := exec.Command(app, arg0, arg1, arg2)
-	stdout, err := cmd.Output()
+	cmd.Dir = "./serverless_function_source_code"
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
 
+	err := cmd.Run()
 	if err != nil {
-		fmt.Println(err.Error())
-		return
+		fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
 	}
-
-	// Print the output
-	fmt.Println(string(stdout))
+	fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
 }

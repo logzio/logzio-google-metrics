@@ -1,10 +1,10 @@
 # Constants
-telegraf_version="1.24.4"
+telegraf_version="1.25.0"
 telegraf_zip_name="telegraf.tar.gz"
 default_telegraf_folder="./telegraf-${telegraf_version}/usr/bin/telegraf"
 function_folder="./function_cloud"
-function_name_hash=$RANDOM | md5sum | head -c 10
-function_name="metrics_gcp_$function_name_hash"
+function_name_hash=$RANDOM
+function_name="metrics_gcp"
 
 # Prints usage
 # Output:
@@ -74,7 +74,7 @@ function get_arguments () {
                 if [[ "$function_name" = "" ]]; then
                     echo -e "\033[0;31mrun.sh (1): No function name specified!\033[0;37m"
                     #Define default
-                    function_name="metrics_gcp_$function_name_hash"
+                    function_name="metrics_gcp"
                 fi
                 echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] function_name = $function_name" 
                 ;;
@@ -208,9 +208,9 @@ function build_string_metric_type(){
         do
             current=$((current + 1))
             if [ $current -eq $last_element ]; then
-                filter+="\"${name}\""
+                filter+="\"${name}/\","
             else
-                filter+="\"${name}\","
+                filter+="\"${name}/\","
             fi
         done
         metric_types=$filter
@@ -231,21 +231,21 @@ function populate_data(){
     fi
 
     tee -a function_cloud/telegraf.conf << END
-    [[inputs.stackdriver]]
-      project = "${project_id}"
-      metric_type_prefix_include = [
-        ${metric_types}
-      ]
-      interval = "1m"
+[[inputs.stackdriver]]
+  project = "${project_id}"
+  metric_type_prefix_include = [
+    ${metric_types}
+  ]
+  interval = "1m"
 
-    [[outputs.http]]
-      url = "https://${listener_url}:8053"
-      data_format = "prometheusremotewrite"
-      [outputs.http.headers]
-        Content-Type = "application/x-protobuf"
-        Content-Encoding = "snappy"
-        X-Prometheus-Remote-Write-Version = "0.1.0"
-        Authorization = "Bearer ${token}"
+[[outputs.http]]
+  url = "https://${listener_url}:8053"
+  data_format = "prometheusremotewrite"
+  [outputs.http.headers]
+    Content-Type = "application/x-protobuf"
+    Content-Encoding = "snappy"
+    X-Prometheus-Remote-Write-Version = "0.1.0"
+    Authorization = "Bearer ${token}"
 END
 
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Populated telegraf config."
@@ -307,15 +307,15 @@ function enable_monitoring_api(){
 function create_function(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Creating GCP Cloud Function..."
 
-    function_name_sufix="${function_name}_func_logzio"
+    function_name_sufix="${function_name}_${function_name_hash}_func_logzio"
 
-    gcloud functions deploy $function_name_sufix --region=$gcp_region --entry-point=LogzioHandler --trigger-http --runtime=go116 --service-account=${account_name}@${project_id}.iam.gserviceaccount.com --source=./function_cloud  --no-allow-unauthenticated
+    gcloud functions deploy $function_name_sufix --region=$gcp_region --entry-point=LogzioHandler --trigger-http --runtime=go116 --service-account=${account_name}@${project_id}.iam.gserviceaccount.com --source=./$function_folder  --no-allow-unauthenticated --set-env-vars=GOOGLE_APPLICATION_CREDENTIALS=./credentials.json
     if [[ $? -ne 0 ]]; then
         echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to create Cloud Function."
         exit 1
     fi
 
-    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] CreateD GCP Cloud Function."
+    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Created GCP Cloud Function."
 }
 
 # Error:
@@ -364,8 +364,44 @@ function create_service_account_to_run_func(){
         exit 1
     fi
 
+    gcloud projects add-iam-policy-binding ${project_id} --member serviceAccount:${account_name}@${project_id}.iam.gserviceaccount.com --role roles/compute.viewer
+    if [[ $? -ne 0 ]]; then
+        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to add permissions to service account."
+        exit 1
+    fi
+
+    gcloud projects add-iam-policy-binding ${project_id} --member serviceAccount:${account_name}@${project_id}.iam.gserviceaccount.com --role roles/monitoring.viewer
+    if [[ $? -ne 0 ]]; then
+        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to add permissions to service account."
+        exit 1
+    fi
+    gcloud projects add-iam-policy-binding ${project_id} --member serviceAccount:${account_name}@${project_id}.iam.gserviceaccount.com --role roles/cloudasset.viewer
+    if [[ $? -ne 0 ]]; then
+        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to add permissions to service account."
+        exit 1
+    fi
+    create_credentials_file
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Added permission to run function."
 }
+
+# Copy credentials file
+
+function create_credentials_file(){
+    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Create credentials-file."
+
+    gcloud iam service-accounts keys create credentials.json --iam-account ${account_name}@${project_id}.iam.gserviceaccount.com
+    if [[ $? -ne 0 ]]; then
+        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to add permissions to service account."
+        exit 1
+    fi
+    # Move telegraf file to function folder
+    mv ./credentials.json $function_folder
+    if [[ $? -ne 0 ]]; then
+        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to move telegraf to function folder..."
+        exit 1
+    fi
+}
+
 
 
 # Add Goolgle Job Scheduler for run function each minute
@@ -374,9 +410,17 @@ function create_service_account_to_run_func(){
 function add_scheduler(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Add Job Scheduler for run Cloud Function ..."
     
-    job_name="${function_name}_job"
+    job_name="${function_name}_${function_name_hash}_job"
 
-    gcloud scheduler jobs create http $job_name --location="$gcp_region" --schedule="* * * * *" --uri="https://$gcp_region-$project_id.cloudfunctions.net/$function_name" --http-method=GET --oidc-service-account-email=${account_name}@${project_id}.iam.gserviceaccount.com
+	is_job_scheduler="$(gcloud scheduler jobs list  --location=$gcp_region --filter=$job_name)"
+	if [ ! -z "$is_job_scheduler" ]
+    then
+       gcloud scheduler jobs delete $job_name --location="$gcp_region"
+    fi
+
+	function_name_sufix="${function_name}_${function_name_hash}_func_logzio"
+
+    gcloud scheduler jobs create http $job_name --location="$gcp_region" --schedule="* * * * *" --uri="https://$gcp_region-$project_id.cloudfunctions.net/$function_name_sufix" --http-method=GET --oidc-service-account-email=${account_name}@${project_id}.iam.gserviceaccount.com
     if [[ $? -ne 0 ]]; then
         echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to create Job Scheduler."
         exit 1
