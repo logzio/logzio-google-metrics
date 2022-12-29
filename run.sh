@@ -256,7 +256,7 @@ END
 # Error:
 #   Exit Code 1
 function get_project_id(){
-    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Creating GCP cloud function..."
+    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Getting Google Project ID..."
 
     gcloud config get-value project
     if [[ $? -ne 0 ]]; then
@@ -264,9 +264,10 @@ function get_project_id(){
         exit 1
     else
         project_id="$(gcloud config get-value project)"
+        echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Project ID=$project_id where will launch integration."
     fi
 
-    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Created GCP cloud function."
+    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Got Project ID."
 }
 
 # Enable GCP Cloud Function API
