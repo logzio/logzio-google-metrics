@@ -345,14 +345,14 @@ function create_service_account_to_run_func(){
     
 
     clean_function_name=${function_name//[^[:alnum:]]/}
-	
+
     account_name="logzio${clean_function_name}account"
-	is_service_account="$(gcloud iam service-accounts list --filter=$account_name@$project_id.iam.gserviceaccount.com --format="value(email)")"
-	if [ ! -z "$is_service_account" ]
+    is_service_account="$(gcloud iam service-accounts list --filter=$account_name@$project_id.iam.gserviceaccount.com --format="value(email)")"
+    if [ ! -z "$is_service_account" ]
     then
       delete_service_account_to_run_func
     fi
-	
+
     gcloud iam service-accounts create ${account_name}
     if [[ $? -ne 0 ]]; then
         echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to Create service account."
@@ -413,13 +413,13 @@ function add_scheduler(){
     
     job_name="${function_name}_${function_name_hash}_job"
 
-	is_job_scheduler="$(gcloud scheduler jobs list  --location=$gcp_region --filter=$job_name)"
-	if [ ! -z "$is_job_scheduler" ]
+    is_job_scheduler="$(gcloud scheduler jobs list  --location=$gcp_region --filter=$job_name)"
+    if [ ! -z "$is_job_scheduler" ]
     then
        gcloud scheduler jobs delete $job_name --location="$gcp_region"
     fi
 
-	function_name_sufix="${function_name}_${function_name_hash}_func_logzio"
+    function_name_sufix="${function_name}_${function_name_hash}_func_logzio"
 
     gcloud scheduler jobs create http $job_name --location="$gcp_region" --schedule="* * * * *" --uri="https://$gcp_region-$project_id.cloudfunctions.net/$function_name_sufix" --http-method=GET --oidc-service-account-email=${account_name}@${project_id}.iam.gserviceaccount.com
     if [[ $? -ne 0 ]]; then
