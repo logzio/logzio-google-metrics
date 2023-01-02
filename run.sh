@@ -4,17 +4,17 @@ telegraf_zip_name="telegraf.tar.gz"
 default_telegraf_folder="./telegraf-${telegraf_version}/usr/bin/telegraf"
 function_folder="./function_cloud"
 function_name_hash=$RANDOM
-function_name="metrics_gcp"
+function_name_prefix="metrics_gcp"
 
 # Prints usage
 # Output:
 #   Help usage
 function show_help () {
-    echo -e "Usage: ./run.sh --listener_url=<listener_url> --token=<token> --gcp_region=<gcp_region> --function_name=<function_name> --metric_types=<metric_types>"
+    echo -e "Usage: ./run.sh --listener_url=<listener_url> --token=<token> --gcp_region=<gcp_region> --function_name_prefix=<function_name_prefix> --metric_types=<metric_types>"
     echo -e " --listener_url=<listener_url>       Logz.io Listener URL (You can check it here https://docs.logz.io/user-guide/accounts/account-region.html)"
     echo -e " --token=<token>                     Logz.io token of the account you want to ship to."
     echo -e " --gcp_region=<gcp_region>           Region where you want to upload Cloud Funtion."
-    echo -e " --function_name=<function_name>     Function name will be using as Cloud Function name and prefix for services."
+    echo -e " --function_name_prefix=<function_name_prefix>     Function name will be using as Cloud Function name and prefix for services."
     echo -e " --metric_types=<metric_types>       Will send metrics that match the Google metrics type. Array of strings splitted by comma. Detailed list you can find https://cloud.google.com/monitoring/api/metrics_gcp"
     echo -e " --help                              Show usage"
 }
@@ -69,14 +69,14 @@ function get_arguments () {
                 fi
                 echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] gcp_region = $gcp_region" 
                 ;;
-            --function_name=*)
-                function_name=$(echo "$1" | cut -d "=" -f2)
-                if [[ "$function_name" = "" ]]; then
+            --function_name_prefix=*)
+                function_name_prefix=$(echo "$1" | cut -d "=" -f2)
+                if [[ "$function_name_prefix" = "" ]]; then
                     echo -e "\033[0;31mrun.sh (1): No function name specified!\033[0;37m"
                     #Define default
-                    function_name="metrics_gcp"
+                    function_name_prefix="metrics_gcp"
                 fi
-                echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] function_name = $function_name" 
+                echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] function_name_prefix = $function_name_prefix" 
                 ;;
             "")
                 break
@@ -308,7 +308,7 @@ function enable_monitoring_api(){
 function create_function(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Creating GCP Cloud Function..."
 
-    function_name_sufix="${function_name}_${function_name_hash}_func_logzio"
+    function_name_sufix="${function_name_prefix}_${function_name_hash}_func_logzio"
 
     gcloud functions deploy $function_name_sufix --region=$gcp_region --entry-point=LogzioHandler --trigger-http --runtime=go116 --service-account=${account_name}@${project_id}.iam.gserviceaccount.com --source=./$function_folder  --no-allow-unauthenticated --set-env-vars=GOOGLE_APPLICATION_CREDENTIALS=./credentials.json
     if [[ $? -ne 0 ]]; then
@@ -322,9 +322,9 @@ function create_function(){
 # Error:
 #   Exit Code 1
 function delete_service_account_to_run_func(){
-    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Delete account to run function..."
+    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Delete service account to run function..."
 
-    clean_function_name=${function_name//[^[:alnum:]]/}
+    clean_function_name=${function_name_prefix//[^[:alnum:]]/}
     account_name="logzio${clean_function_name}account"
 
     gcloud iam service-accounts delete ${account_name}@${project_id}.iam.gserviceaccount.com
@@ -344,7 +344,7 @@ function create_service_account_to_run_func(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Add permission to run function ..."
     
 
-    clean_function_name=${function_name//[^[:alnum:]]/}
+    clean_function_name=${function_name_prefix//[^[:alnum:]]/}
 
     account_name="logzio${clean_function_name}account"
     is_service_account="$(gcloud iam service-accounts list --filter=$account_name@$project_id.iam.gserviceaccount.com --format="value(email)")"
@@ -411,7 +411,7 @@ function create_credentials_file(){
 function add_scheduler(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Add Job Scheduler for run Cloud Function ..."
     
-    job_name="${function_name}_${function_name_hash}_job"
+    job_name="${function_name_prefix}_${function_name_hash}_job"
 
     is_job_scheduler="$(gcloud scheduler jobs list  --location=$gcp_region --filter=$job_name)"
     if [ ! -z "$is_job_scheduler" ]
@@ -419,7 +419,7 @@ function add_scheduler(){
        gcloud scheduler jobs delete $job_name --location="$gcp_region"
     fi
 
-    function_name_sufix="${function_name}_${function_name_hash}_func_logzio"
+    function_name_sufix="${function_name_prefix}_${function_name_hash}_func_logzio"
 
     gcloud scheduler jobs create http $job_name --location="$gcp_region" --schedule="* * * * *" --uri="https://$gcp_region-$project_id.cloudfunctions.net/$function_name_sufix" --http-method=GET --oidc-service-account-email=${account_name}@${project_id}.iam.gserviceaccount.com
     if [[ $? -ne 0 ]]; then
