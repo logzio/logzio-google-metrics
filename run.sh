@@ -421,7 +421,7 @@ function add_scheduler(){
 
     function_name_sufix="${function_name_prefix}_${function_name_hash}_func_logzio"
 
-    gcloud scheduler jobs create http $job_name --location="$gcp_region" --schedule="* * * * *" --uri="https://$gcp_region-$project_id.cloudfunctions.net/$function_name_sufix" --http-method=GET --oidc-service-account-email=${account_name}@${project_id}.iam.gserviceaccount.com
+    gcloud scheduler jobs create http $job_name --location="$gcp_region" --schedule="*/5 * * * *" --uri="https://$gcp_region-$project_id.cloudfunctions.net/$function_name_sufix" --http-method=GET --oidc-service-account-email=${account_name}@${project_id}.iam.gserviceaccount.com
     if [[ $? -ne 0 ]]; then
         echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to create Job Scheduler."
         exit 1
