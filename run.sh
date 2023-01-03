@@ -148,7 +148,7 @@ function check_validation () {
 # Download/UNZIP/Move Telegraf version as 1.24.4
 # Error:
 #   Exit Code 1
-function download_telegraf(){
+function download_Telegraf(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Downloading Telegraf from github ..."
     curl -fsSL https://dl.influxdata.com/telegraf/releases/telegraf-${telegraf_version}_linux_amd64.tar.gz > ./$telegraf_zip_name
     if [[ $? -ne 0 ]]; then
@@ -435,7 +435,7 @@ is_gcloud_install
 get_project_id
 
 get_arguments "$@"
-download_telegraf
+download_Telegraf
 
 build_string_metric_type
 populate_data
