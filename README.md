@@ -44,19 +44,18 @@ chmod +x run.sh
 3. Run the code:
 
 ```
-./run.sh --listener_url=<listener_url> --token=<token> --gcp_region=<gcp_region> --function_name=<function_name> --metric_types=<metric_types>
+./run.sh --listener_url=<listener_url> --token=<token> --gcp_region=<gcp_region> --function_name_prefix=<function_name> --metric_types=<metric_types>
 ```
 
 Replace the variables as per the table below:
 
-| Parameter    | Description                                                                                                                                                                                                         |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| listener_url | Use the listener URL specific to the region of your Logz.io account. You can look it up [here](https://docs.logz.io/user-guide/accounts/account-region.html).                                                       |
-| token        | The metrics' shipping token of the account you want to ship to.                                                                                                                                                     |
-| gcp_region   | Google Cloud Region where you want to upload Cloud Function. \*`Requires for Deploy to Cloud option for platform`. To check available regions you can see [here](https://cloud.google.com/functions/docs/locations) |
-
-| function_name | Function name will be using as Google Cloud Function name. (Default:`metrics_gcp`) |
-| metric_types | Will send metrics that match the Google metric type. Detailed list you can find [here](https://cloud.google.com/monitoring/api/metrics_gcp) (ex: `cloudfunctions.googleapis.com`) |
+| Parameter            | Description                                                                                                                                                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| listener_url         | Use the listener URL specific to the region of your Logz.io account. You can look it up [here](https://docs.logz.io/user-guide/accounts/account-region.html).                                                       |
+| token                | The metrics' shipping token of the account you want to ship to.                                                                                                                                                     |
+| gcp_region           | Google Cloud Region where you want to upload Cloud Function. \*`Requires for Deploy to Cloud option for platform`. To check available regions you can see [here](https://cloud.google.com/functions/docs/locations) |
+| function_name_prefix | Function name will be using as Google Cloud Function name. (Default:`metrics_gcp`)                                                                                                                                  |
+| metric_types         | Will send metrics that match the Google metric type. Detailed list you can find [here](https://cloud.google.com/monitoring/api/metrics_gcp) (ex: `cloudfunctions.googleapis.com`)                                   |
 
 ## Check Logz.io for your metrics
 
