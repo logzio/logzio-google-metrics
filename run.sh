@@ -106,7 +106,7 @@ function is_gcloud_install(){
     then
         return
     else
-        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to get gcloud CLI. Please install Gcloud and login to proper account from where you want to send metrics..."
+        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to use Gcloud CLI. Please install Gcloud and login to proper account from where you want to send metrics..."
         exit 1	
     fi
 }
@@ -142,56 +142,56 @@ function check_validation () {
         exit 1
     fi
 
-    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Validation of arguments passed."
+    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Validation of arguments passed successfully."
 }
 
 # Download/UNZIP/Move Telegraf version as 1.24.4
 # Error:
 #   Exit Code 1
 function download_telegraf(){
-    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Downloading telegraf from github ..."
+    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Downloading Telegraf from github ..."
     curl -fsSL https://dl.influxdata.com/telegraf/releases/telegraf-${telegraf_version}_linux_amd64.tar.gz > ./$telegraf_zip_name
     if [[ $? -ne 0 ]]; then
-        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to download telegraf..."
+        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to download Telegraf..."
         exit 1
     fi
 
-    # Unzip telegraf file 
+    # Unzip Telegraf file 
     tar -zxf ./$telegraf_zip_name --directory .
     if [[ $? -ne 0 ]]; then
-        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to unzip telegraf..."
+        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to unzip Telegraf..."
         exit 1
     fi
     
-    # Move telegraf file to function folder
+    # Move Telegraf file to function folder
     mv $default_telegraf_folder $function_folder
     if [[ $? -ne 0 ]]; then
-        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to move telegraf to function folder..."
+        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to move Telegraf to function's folder..."
         exit 1
     fi
     
-    # Add permission to execute file for telegraf
+    # Add permission to execute file for Telegraf
     chmod +x $function_folder/telegraf
     if [[ $? -ne 0 ]]; then
-        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to give permission to telegraf..."
+        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to give permission to Telegraf..."
         exit 1
     fi
 
-    # Remove telegraf zip tar.gz file
+    # Remove Telegraf zip tar.gz file
     rm -rf ./telegraf-${telegraf_version}
     if [[ $? -ne 0 ]]; then
-        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to remove telegraf folder  ..."
+        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to remove Telegraf folder  ..."
         exit 1
     fi
     
     # Remove telegraf zip tar.gz file
     rm -rf ./$telegraf_zip_name
     if [[ $? -ne 0 ]]; then
-        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to remove telegraf zip file  ..."
+        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to remove Telegraf zip file  ..."
         exit 1
     fi
 
-    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Downloaded telegraf from github."
+    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Downloaded Telegraf from github."
 }
 
 # Convert metrics_type string to array of strings
@@ -220,14 +220,14 @@ function build_string_metric_type(){
 }
 
 
-# Populate user's credentials to telegraf configuration 
+# Populate user's credentials to Telegraf configuration 
 function populate_data(){
-    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Populating telegraf config ..."
+    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Populating Telegraf config ..."
 
     # Remove telegraf.conf for create clean
     rm -rf ./function_cloud/telegraf.conf
     if [[ $? -ne 0 ]]; then
-        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Error to remove..."
+        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Error to remove Telegraf configuration file..."
     fi
 
     tee -a function_cloud/telegraf.conf << END
@@ -248,7 +248,7 @@ function populate_data(){
     Authorization = "Bearer ${token}"
 END
 
-    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Populated telegraf config."
+    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Populated Telegraf config."
 }
 
 
@@ -264,7 +264,7 @@ function get_project_id(){
         exit 1
     else
         project_id="$(gcloud config get-value project)"
-        echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Project ID=$project_id where will launch integration."
+        echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Integration will be launch in Project ID=$project_id."
     fi
 
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Got Project ID."
@@ -395,10 +395,10 @@ function create_credentials_file(){
         echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to add permissions to service account."
         exit 1
     fi
-    # Move telegraf file to function folder
+    # Move Telegraf file to function folder
     mv ./credentials.json $function_folder
     if [[ $? -ne 0 ]]; then
-        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to move telegraf to function folder..."
+        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to move Telegraf to function's folder..."
         exit 1
     fi
 }

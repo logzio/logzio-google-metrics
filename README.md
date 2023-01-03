@@ -23,7 +23,7 @@ gcloud auth login
 
 2. Navigate to the relevant project.
 
-3. Set the `project id` for the project that you want to send logs from:
+3. Set the `project id` for the project that you want to collect metrics from:
 
 ```shell
 gcloud config set project <PROJECT_ID>
