@@ -106,7 +106,7 @@ function is_gcloud_install(){
     then
         return
     else
-        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to use Gcloud CLI. Please install Gcloud and login to proper account from where you want to send metrics..."
+        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to use GCloud CLI. Please install GCloud and login to proper account from where you want to send metrics..."
         exit 1	
     fi
 }
