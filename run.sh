@@ -224,13 +224,7 @@ function build_string_metric_type(){
 function populate_data(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Populating Telegraf config ..."
 
-    # Remove telegraf.conf for create clean
-    rm -rf ./function_cloud/telegraf.conf
-    if [[ $? -ne 0 ]]; then
-        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Error to remove Telegraf configuration file..."
-    fi
-
-    tee -a function_cloud/telegraf.conf << END
+    tee function_cloud/telegraf.conf << END
 [[inputs.stackdriver]]
   project = "${project_id}"
   metric_type_prefix_include = [
