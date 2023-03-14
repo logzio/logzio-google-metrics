@@ -75,6 +75,10 @@ Licensed under the [Apache 2.0](http://apache.org/licenses/LICENSE-2.0.txt) Lice
 
 ## Update log
 
+**1.0.1**
+
+-   Add function to init account and assign main project
+
 **1.0.0**
 
 -   Initial Release
