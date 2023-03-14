@@ -57,6 +57,14 @@ Replace the variables as per the table below:
 | function_name_prefix | Function name will be using as Google Cloud Function name. (Default:`metrics_gcp`)                                                                                                                                  |
 | metric_types         | Will send metrics that match the Google metric type. Detailed list you can find [here](https://cloud.google.com/monitoring/api/metrics_gcp) (ex: `cloudfunctions.googleapis.com`)                                   |
 
+## Initialization account
+
+First step what you will see it's initialize account. Launches an interactive Getting Started workflow for the gcloud command-line tool. It performs the following setup steps:
+
+-   Authorizes gcloud and other SDK tools to access Google Cloud using your user account credentials, or from an account of your choosing whose credentials are already available.
+-   Sets up a new or existing configuration.
+-   Sets properties in that configuration, including the current project and optionally, the default Google Compute Engine region and zone you'd like to use.
+
 ## Check Logz.io for your metrics
 
 Give your metrics a few minutes to get from your system to ours, and then open [Metrics](https://app.logz.io/#/dashboard/metrics).

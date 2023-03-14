@@ -424,8 +424,19 @@ function add_scheduler(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Added Job Scheduler for run Cloud Function."
 }
 
+function gcloud_init(){
+    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Initialize and choose Google account and choose Project"
+    gcloud init
+    if [[ $? -ne 0 ]]; then
+        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to create Cloud Function."
+        exit 1
+    fi
+    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Main setup"
+}
+
 # Initialize flow
 is_gcloud_install
+gcloud_init
 get_project_id
 
 get_arguments "$@"
