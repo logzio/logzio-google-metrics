@@ -246,24 +246,6 @@ END
 }
 
 
-# Get project ID 
-# Error:
-#   Exit Code 1
-function get_project_id(){
-    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Getting Google Project ID..."
-
-    gcloud config get-value project
-    if [[ $? -ne 0 ]]; then
-        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to get user project id  ..."
-        exit 1
-    else
-        project_id="$(gcloud config get-value project)"
-        echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Integration will be launch in Project ID=$project_id."
-    fi
-
-    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Got Project ID."
-}
-
 # Enable GCP Cloud Function API
 # Error:
 #   Exit Code 1
@@ -424,20 +406,57 @@ function add_scheduler(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Added Job Scheduler for run Cloud Function."
 }
 
-function gcloud_init(){
-    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Initialize and choose Google account and choose Project"
-    gcloud init
-    if [[ $? -ne 0 ]]; then
-        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to initialize account."
-        exit 1
+ 
+# Init script with proper message and display active user account
+
+function gcloud_init_confs(){
+    user_active_account="$(gcloud auth list --filter=status:ACTIVE --format="value(account)")"
+    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Your active account [${user_active_account}]"
+    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Choose Project ID"
+    _choose_and_set_project_id
+	echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Project ID was updated."
+}
+
+
+# Choose and set project id
+# Error:
+#   Exit Code 1
+function _choose_and_set_project_id(){
+    array_projects=()
+    project_id=""
+    count=0
+    for project in  $(gcloud projects list --format="value(projectId)")
+    do
+        count=$((count + 1))
+        echo "[$count]:  $project"
+        array_projects+=("$project")
+    done
+    read -n 1 -p "Please fill in number of project: " mainmenuinput
+    count_projects=0
+    for value in "${array_projects[@]}"
+    do
+        count_projects=$((count_projects + 1))
+        if [ "$mainmenuinput" = "$count_projects" ]; then
+            project_id=$value
+            gcloud config set project $project_id
+            if [[ $? -ne 0 ]]; then
+                echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to create Cloud Function."
+                exit 1
+            fi
+            echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Integration will be launch in Project ID=$project_id"
+        fi
+    done
+
+    if [[ "$project_id" = "" ]]; then
+        echo -e "[WARNING] [$(date +"%Y-%m-%d %H:%M:%S")] Please try again and  enter value between 1 and $count"  
+        _choose_and_set_project_id  
     fi
-    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Main setup"
+
 }
 
 # Initialize flow
 is_gcloud_install
-gcloud_init
-get_project_id
+gcloud_init_confs
 
 get_arguments "$@"
 download_Telegraf

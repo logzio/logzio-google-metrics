@@ -47,6 +47,8 @@ chmod +x run.sh
 ./run.sh --listener_url=<listener_url> --token=<token> --gcp_region=<gcp_region> --function_name_prefix=<function_name> --metric_types=<metric_types>
 ```
 
+<b>When you run this script, you should choose the project ID where you need to run the integration.</b>
+
 Replace the variables as per the table below:
 
 | Parameter            | Description                                                                                                                                                                                                         |
@@ -56,14 +58,6 @@ Replace the variables as per the table below:
 | gcp_region           | Google Cloud Region where you want to upload Cloud Function. \*`Requires for Deploy to Cloud option for platform`. To check available regions you can see [here](https://cloud.google.com/functions/docs/locations) |
 | function_name_prefix | Function name will be using as Google Cloud Function name. (Default:`metrics_gcp`)                                                                                                                                  |
 | metric_types         | Will send metrics that match the Google metric type. Detailed list you can find [here](https://cloud.google.com/monitoring/api/metrics_gcp) (ex: `cloudfunctions.googleapis.com`)                                   |
-
-## Initialization account
-
-First step what you will see it's initialize account. Launches an interactive Getting Started workflow for the gcloud command-line tool. It performs the following setup steps:
-
--   Authorizes gcloud and other SDK tools to access Google Cloud using your user account credentials, or from an account of your choosing whose credentials are already available.
--   Sets up a new or existing configuration.
--   Sets properties in that configuration, including the current project and optionally, the default Google Compute Engine region and zone you'd like to use.
 
 ## Check Logz.io for your metrics
 
@@ -77,7 +71,7 @@ Licensed under the [Apache 2.0](http://apache.org/licenses/LICENSE-2.0.txt) Lice
 
 **1.0.1**
 
--   Add function to init account and assign main project
+-   Add function that user can choose project id where need to run integration
 
 **1.0.0**
 
