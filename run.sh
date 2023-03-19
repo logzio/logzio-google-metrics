@@ -431,7 +431,7 @@ function _choose_and_set_project_id(){
         echo "[$count]:  $project"
         array_projects+=("$project")
     done
-    read -n 1 -p "Please fill in number of project: " mainmenuinput
+    read -n 2 -p "Please fill in number of project where you would like the integration to be deployed in: " mainmenuinput
     count_projects=0
     for value in "${array_projects[@]}"
     do
@@ -448,7 +448,7 @@ function _choose_and_set_project_id(){
     done
 
     if [[ "$project_id" = "" ]]; then
-        echo -e "[WARNING] [$(date +"%Y-%m-%d %H:%M:%S")] Please try again and  enter value between 1 and $count"  
+        echo -e "\\n[WARNING] [$(date +"%Y-%m-%d %H:%M:%S")] Please try again and  enter value between 1 and $count"  
         _choose_and_set_project_id  
     fi
 
