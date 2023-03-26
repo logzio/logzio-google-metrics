@@ -4,18 +4,18 @@ telegraf_zip_name="telegraf.tar.gz"
 default_telegraf_folder="./telegraf-${telegraf_version}/usr/bin/telegraf"
 function_folder="./function_cloud"
 function_name_hash=$RANDOM
-function_name_prefix="metrics_gcp"
+function_name="metrics_gcp"
 
 # Prints usage
 # Output:
 #   Help usage
 function show_help () {
-    echo -e "Usage: ./run.sh --listener_url=<listener_url> --token=<token> --gcp_region=<gcp_region> --function_name_prefix=<function_name_prefix> --metric_types=<metric_types>"
+    echo -e "Usage: ./run.sh --listener_url=<listener_url> --token=<token> --gcp_region=<gcp_region> --function_name=<function_name> --telemetry_list=<telemetry_list>"
     echo -e " --listener_url=<listener_url>       Logz.io Listener URL (You can check it here https://docs.logz.io/user-guide/accounts/account-region.html)"
     echo -e " --token=<token>                     Logz.io token of the account you want to ship to."
     echo -e " --gcp_region=<gcp_region>           Region where you want to upload Cloud Funtion."
-    echo -e " --function_name_prefix=<function_name_prefix>     Function name will be using as Cloud Function name and prefix for services."
-    echo -e " --metric_types=<metric_types>       Will send metrics that match the Google metrics type. Array of strings splitted by comma. Detailed list you can find https://cloud.google.com/monitoring/api/metrics_gcp"
+    echo -e " --function_name=<function_name>     Function name will be using as Cloud Function name and prefix for services."
+    echo -e " --telemetry_list=<telemetry_list>   Will send metrics that match the Google metrics type. Array of strings splitted by comma. Detailed list you can find https://cloud.google.com/monitoring/api/metrics_gcp"
     echo -e " --help                              Show usage"
 }
 
@@ -25,7 +25,7 @@ function show_help () {
 # Output:
 #   listener_url - Logz.io Listener URL
 #   token - Logz.io Token of the account user want to ship to.
-#   metric_type - Metrics that match the Google metrics type. Array of strings splitted by comma..
+#   telemetry_list - Metrics that match the Google metrics type. Array of strings splitted by comma..
 # Error:
 #   Exit Code 1
 
@@ -53,13 +53,13 @@ function get_arguments () {
                 fi
                 echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] token = $token"
                 ;;
-            --metric_types=*)
-                metric_types=$(echo "$1" | cut -d "=" -f2)
-                if [[ "$metric_types" = "" ]]; then
+            --telemetry_list=*)
+                telemetry_list=$(echo "$1" | cut -d "=" -f2)
+                if [[ "$telemetry_list" = "" ]]; then
                     echo -e "\033[0;31mrun.sh (1): No metrics types specified!\033[0;37m"
                     exit 1
                 fi
-                echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] metric_types = $metric_types" 
+                echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] telemetry_list = $telemetry_list" 
                 ;;
             --gcp_region=*)
                 gcp_region=$(echo "$1" | cut -d "=" -f2)
@@ -69,14 +69,14 @@ function get_arguments () {
                 fi
                 echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] gcp_region = $gcp_region" 
                 ;;
-            --function_name_prefix=*)
-                function_name_prefix=$(echo "$1" | cut -d "=" -f2)
-                if [[ "$function_name_prefix" = "" ]]; then
+            --function_name=*)
+                function_name=$(echo "$1" | cut -d "=" -f2)
+                if [[ "$function_name" = "" ]]; then
                     echo -e "\033[0;31mrun.sh (1): No function name specified!\033[0;37m"
                     #Define default
-                    function_name_prefix="metrics_gcp"
+                    function_name="metrics_gcp"
                 fi
-                echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] function_name_prefix = $function_name_prefix" 
+                echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] function_name = $function_name" 
                 ;;
             "")
                 break
@@ -132,7 +132,7 @@ function check_validation () {
         is_error=true
         echo -e "\033[0;31mrun.sh (1): Region for Google Cloud Platform is missing please rerun the script with the relevant parameters\033[0;37m"
     fi
-    if [[ -z "$metric_types" ]]; then
+    if [[ -z "$telemetry_list" ]]; then
         is_error=true
         echo -e "\033[0;31mrun.sh (1): Metric type is missing please rerun the script with the relevant parameters\033[0;37m"
     fi
@@ -198,9 +198,9 @@ function download_Telegraf(){
 function build_string_metric_type(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Parsing metrics types..."
 
-    if [[ ! -z "$metric_types" ]]; then
+    if [[ ! -z "$telemetry_list" ]]; then
         filter=""
-        array_filter_names=(${metric_types//,/ })
+        array_filter_names=(${telemetry_list//,/ })
 
         last_element=${#array_filter_names[@]}
         current=0
@@ -213,7 +213,7 @@ function build_string_metric_type(){
                 filter+="\"${name}/\","
             fi
         done
-        metric_types=$filter
+        telemetry_list=$filter
     fi
     
 	echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Parsed metrics types."
@@ -228,7 +228,7 @@ function populate_data(){
 [[inputs.stackdriver]]
   project = "${project_id}"
   metric_type_prefix_include = [
-    ${metric_types}
+    ${telemetry_list}
   ]
   interval = "1m"
 
@@ -284,7 +284,7 @@ function enable_monitoring_api(){
 function create_function(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Creating GCP Cloud Function..."
 
-    function_name_sufix="${function_name_prefix}_${function_name_hash}_func_logzio"
+    function_name_sufix="${function_name}_${function_name_hash}_func_logzio"
 
     gcloud functions deploy $function_name_sufix --region=$gcp_region --entry-point=LogzioHandler --trigger-http --runtime=go116 --service-account=${account_name}@${project_id}.iam.gserviceaccount.com --source=./$function_folder  --no-allow-unauthenticated --set-env-vars=GOOGLE_APPLICATION_CREDENTIALS=./credentials.json
     if [[ $? -ne 0 ]]; then
@@ -300,7 +300,7 @@ function create_function(){
 function delete_service_account_to_run_func(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Delete service account to run function..."
 
-    clean_function_name=${function_name_prefix//[^[:alnum:]]/}
+    clean_function_name=${function_name//[^[:alnum:]]/}
     account_name="logzio${clean_function_name}account"
 
     gcloud iam service-accounts delete ${account_name}@${project_id}.iam.gserviceaccount.com
@@ -320,7 +320,7 @@ function create_service_account_to_run_func(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Add permission to run function ..."
     
 
-    clean_function_name=${function_name_prefix//[^[:alnum:]]/}
+    clean_function_name=${function_name//[^[:alnum:]]/}
 
     account_name="logzio${clean_function_name}account"
     is_service_account="$(gcloud iam service-accounts list --filter=$account_name@$project_id.iam.gserviceaccount.com --format="value(email)")"
@@ -387,7 +387,7 @@ function create_credentials_file(){
 function add_scheduler(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Add Job Scheduler for run Cloud Function ..."
     
-    job_name="${function_name_prefix}_${function_name_hash}_job"
+    job_name="${function_name}_${function_name_hash}_job"
 
     is_job_scheduler="$(gcloud scheduler jobs list  --location=$gcp_region --filter=$job_name)"
     if [ ! -z "$is_job_scheduler" ]
@@ -395,7 +395,7 @@ function add_scheduler(){
        gcloud scheduler jobs delete $job_name --location="$gcp_region"
     fi
 
-    function_name_sufix="${function_name_prefix}_${function_name_hash}_func_logzio"
+    function_name_sufix="${function_name}_${function_name_hash}_func_logzio"
 
     gcloud scheduler jobs create http $job_name --location="$gcp_region" --schedule="*/5 * * * *" --uri="https://$gcp_region-$project_id.cloudfunctions.net/$function_name_sufix" --http-method=GET --oidc-service-account-email=${account_name}@${project_id}.iam.gserviceaccount.com
     if [[ $? -ne 0 ]]; then

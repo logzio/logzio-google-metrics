@@ -44,7 +44,7 @@ chmod +x run.sh
 3. Run the code:
 
 ```
-./run.sh --listener_url=<listener_url> --token=<token> --gcp_region=<gcp_region> --function_name_prefix=<function_name> --metric_types=<metric_types>
+./run.sh --listener_url=<listener_url> --token=<token> --gcp_region=<gcp_region> --function_name=<function_name> --telemetry_list=<telemetry_list>
 ```
 
 <b>When you run this script, you should choose the project ID where you need to run the integration.</b>
@@ -57,7 +57,7 @@ Replace the variables as per the table below:
 | token                | The metrics' shipping token of the account you want to ship to.                                                                                                                                                     |
 | gcp_region           | Google Cloud Region where you want to upload Cloud Function. \*`Requires for Deploy to Cloud option for platform`. To check available regions you can see [here](https://cloud.google.com/functions/docs/locations) |
 | function_name_prefix | Function name will be using as Google Cloud Function name. (Default:`metrics_gcp`)                                                                                                                                  |
-| metric_types         | Will send metrics that match the Google metric type. Detailed list you can find [here](https://cloud.google.com/monitoring/api/metrics_gcp) (ex: `cloudfunctions.googleapis.com`)                                   |
+| telemetry_list       | Will send metrics that match the Google metric type. Detailed list you can find [here](https://cloud.google.com/monitoring/api/metrics_gcp) (ex: `cloudfunctions.googleapis.com`)                                   |
 
 ## Check Logz.io for your metrics
 
@@ -71,7 +71,7 @@ Licensed under the [Apache 2.0](http://apache.org/licenses/LICENSE-2.0.txt) Lice
 
 **1.0.1**
 
--   Add function that user can choose project id where need to run integration
+-   Add function that user can choose project id where need to run integration, Rename params from metric_types to telemetry_list
 
 **1.0.0**
 
