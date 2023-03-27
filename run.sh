@@ -443,7 +443,7 @@ function _choose_and_set_project_id(){
         echo "[$count]:  $project"
         array_projects+=("$project")
     done
-    read -n 2 -p "Please fill in number of project where you would like the integration to be deployed in: " mainmenuinput
+    read -n 2 -p "Please fill in number of the project where you would like the integration to be deployed in: " mainmenuinput
     count_projects=0
     for value in "${array_projects[@]}"
     do
