@@ -47,7 +47,7 @@ chmod +x run.sh
 ./run.sh --listener_url=<listener_url> --token=<token> --gcp_region=<gcp_region> --function_name=<function_name> --telemetry_list=<telemetry_list>
 ```
 
-<b>When you run this script, you should choose the project ID where you need to run the integration.</b>
+**When you run this script, you should choose the project ID where you need to run the integration.**
 
 Replace the variables as per the table below:
 
@@ -67,12 +67,12 @@ Give your metrics a few minutes to get from your system to ours, and then open [
 
 Licensed under the [Apache 2.0](http://apache.org/licenses/LICENSE-2.0.txt) License.
 
-## Update log
+## Changelog
 
-**1.0.1**
+-   **1.0.1**
 
--   Add function that user can choose project id where need to run integration, Rename params from metric_types to telemetry_list
+    Add function that user can choose project id where need to run integration, Rename params from metric_types to telemetry_list
 
-**1.0.0**
+-   **1.0.0**
 
--   Initial Release
+    Initial Release
