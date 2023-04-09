@@ -307,7 +307,7 @@ function delete_service_account_to_run_func(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Delete service account to run function..."
 
     clean_function_name=${function_name//[^[:alnum:]]/}
-    account_name="${clean_function_name}acc"
+    account_name="${clean_function_name:0:25}acc"
 
     gcloud iam service-accounts delete ${account_name}@${project_id}.iam.gserviceaccount.com
     if [[ $? -ne 0 ]]; then
@@ -324,11 +324,9 @@ function delete_service_account_to_run_func(){
 #   Exit Code 1
 function create_service_account_to_run_func(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Add permission to run function ..."
-    
-
     clean_function_name=${function_name//[^[:alnum:]]/}
 
-    account_name="${clean_function_name}acc"
+    account_name="${clean_function_name:0:25}acc"
     is_service_account="$(gcloud iam service-accounts list --filter=$account_name@$project_id.iam.gserviceaccount.com --format="value(email)")"
     if [ ! -z "$is_service_account" ]
     then
