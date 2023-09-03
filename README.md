@@ -69,10 +69,9 @@ Licensed under the [Apache 2.0](http://apache.org/licenses/LICENSE-2.0.txt) Lice
 
 ## Changelog
 
--   **1.0.1**
-
-    Add function that user can choose project id where need to run integration, Rename params from metric_types to telemetry_list
-
--   **1.0.0**
-
-    Initial Release
+- **1.0.3**:
+    - **Bug fix** for project id's with more than 2 digits.
+- **1.0.1**:
+    - Add function that user can choose project id where need to run integration, Rename params from metric_types to telemetry_list
+- **1.0.0**:
+    - Initial Release

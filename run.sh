@@ -441,7 +441,7 @@ function _choose_and_set_project_id(){
         echo "[$count]:  $project"
         array_projects+=("$project")
     done
-    read -n 2 -p "Please specify the project for integration deployment by referring to the project's numerical position in the list: " mainmenuinput
+    read -p "Please specify the project for integration deployment by referring to the project's numerical position in the list: " mainmenuinput
     count_projects=0
     for value in "${array_projects[@]}"
     do
