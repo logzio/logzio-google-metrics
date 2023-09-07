@@ -1,5 +1,5 @@
 # Constants
-telegraf_version="1.25.0"
+telegraf_version="1.27.4"
 telegraf_zip_name="telegraf.tar.gz"
 default_telegraf_folder="./telegraf-${telegraf_version}/usr/bin/telegraf"
 function_folder="./function_cloud"
@@ -145,7 +145,7 @@ function check_validation () {
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Validation of arguments passed successfully."
 }
 
-# Download/UNZIP/Move Telegraf version as 1.24.4
+# Download/UNZIP/Move Telegraf version as 1.27.4
 # Error:
 #   Exit Code 1
 function download_Telegraf(){
