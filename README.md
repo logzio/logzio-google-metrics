@@ -68,7 +68,8 @@ Give your metrics a few minutes to get from your system to ours, and then open [
 Licensed under the [Apache 2.0](http://apache.org/licenses/LICENSE-2.0.txt) License.
 
 ## Changelog
-
+- **1.1.0**:
+  - Upgrade Telegraf to `1.27.4`.
 - **1.0.3**:
     - **Bug fix** for project id's with more than 2 digits.
 - **1.0.1**:
