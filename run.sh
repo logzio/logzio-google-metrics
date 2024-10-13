@@ -281,7 +281,7 @@ function enable_monitoring_api(){
 # Create Google Cloud Function
 # Error:
 #   Exit Code 1
-function create_function(){
+function create_cloud_function(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Creating GCP Cloud Function..."
 
     if [[ "$function_name" =~ ^logzio_* ]];
