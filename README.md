@@ -47,7 +47,7 @@ chmod +x run.sh
 ./run.sh --listener_url=<listener_url> --token=<token> --gcp_region=<gcp_region> --function_name=<function_name> --telemetry_list=<telemetry_list>
 ```
 
-**When you run this script, you should choose the project ID where you need to run the integration.**
+<b>When you run this script, you should choose the project ID/s where you need to run the integration, you can choose `all` to deploy resources on all projects</b>
 
 Replace the variables as per the table below:
 
@@ -62,6 +62,17 @@ Replace the variables as per the table below:
 ## Check Logz.io for your metrics
 
 Give your metrics a few minutes to get from your system to ours, and then open [Metrics](https://app.logz.io/#/dashboard/metrics).
+
+# Uninstall
+
+###  gcp_region - Region where user want to remove Logz.io integration resources.
+###  function_name - Name of the Cloud Function. Default is 'logzioHandler'
+
+To uninstall the resources, run the following command:
+
+```shell
+chmod +x uninstall.sh && ./uninstall.sh --gcp_region=<region> --function_name=<function_name>
+```
 
 ## License
 
