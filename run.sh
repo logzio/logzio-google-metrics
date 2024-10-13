@@ -506,7 +506,8 @@ function deploy_resources_to_projects() {
         remove_cloud_function $project_id
         remove_scheduler $project_id
         remove_service_account $project_id
-
+        # Call the function to populate data in Telegraf config
+        populate_data
         # Call the functions to create resources
         create_service_account  $project_id
         enable_cloudfunction_api
@@ -522,6 +523,6 @@ gcloud_init_confs
 get_arguments "$@"
 download_Telegraf
 build_string_metric_type
-populate_data
 choose_and_set_project_id
+
 deploy_resources_to_projects
