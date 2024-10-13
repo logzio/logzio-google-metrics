@@ -3,7 +3,6 @@ telegraf_version="1.32.1"
 telegraf_zip_name="telegraf.tar.gz"
 default_telegraf_folder="./telegraf-${telegraf_version}/usr/bin/telegraf"
 function_folder="./function_cloud"
-function_name_hash=$RANDOM
 function_name="metrics_gcp"
 
 # Prints usage
@@ -403,7 +402,7 @@ function create_credentials_file(){
 function add_scheduler(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Add Job Scheduler for run Cloud Function ..."
     
-    job_name="${function_name}_${function_name_hash}_job"
+    job_name="${function_name}_job"
 
     is_job_scheduler="$(gcloud scheduler jobs list  --location=$gcp_region --filter=$job_name)"
     if [ ! -z "$is_job_scheduler" ]
