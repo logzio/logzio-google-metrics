@@ -1,9 +1,8 @@
 # Constants
-telegraf_version="1.27.4"
+telegraf_version="1.32.1"
 telegraf_zip_name="telegraf.tar.gz"
 default_telegraf_folder="./telegraf-${telegraf_version}/usr/bin/telegraf"
 function_folder="./function_cloud"
-function_name_hash=$RANDOM
 function_name="metrics_gcp"
 
 # Prints usage
@@ -194,6 +193,7 @@ function download_Telegraf(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Downloaded Telegraf from github."
 }
 
+
 # Convert metrics_type string to array of strings
 function build_string_metric_type(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Parsing metrics types..."
@@ -261,6 +261,7 @@ function enable_cloudfunction_api(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Enabled Cloud Function API."
 }
 
+
 # Enable GCP Monitoring API
 # Error:
 #   Exit Code 1
@@ -292,7 +293,7 @@ function create_cloud_function(){
     fi
 
 
-    gcloud functions deploy $function_name_prefix --region=$gcp_region --entry-point=LogzioHandler --trigger-http --runtime=go116 --service-account=${account_name}@${project_id}.iam.gserviceaccount.com --source=./$function_folder  --no-allow-unauthenticated --set-env-vars=GOOGLE_APPLICATION_CREDENTIALS=./credentials.json
+    gcloud functions deploy $function_name_prefix  --gen2 --region=$gcp_region --entry-point=LogzioHandler --trigger-http --runtime=go121 --service-account=${account_name}@${project_id}.iam.gserviceaccount.com --source=./$function_folder  --no-allow-unauthenticated --set-env-vars=GOOGLE_APPLICATION_CREDENTIALS=./credentials.json
     if [[ $? -ne 0 ]]; then
         echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to create Cloud Function."
         exit 1
@@ -301,72 +302,82 @@ function create_cloud_function(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Created GCP Cloud Function."
 }
 
-# Error:
-#   Exit Code 1
-function delete_service_account_to_run_func(){
-    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Delete service account to run function..."
-
-    clean_function_name=${function_name//[^[:alnum:]]/}
-    account_name="${clean_function_name:0:25}acc"
-
-    gcloud iam service-accounts delete ${account_name}@${project_id}.iam.gserviceaccount.com
-    if [[ $? -ne 0 ]]; then
-        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to Create service account."
-        exit 1
+# Remove existing Cloud Function
+function remove_cloud_function() {
+    
+    if [[ "$function_name" =~ ^logzio_* ]];
+    then
+	    function_name_prefix="${function_name}"
+    else
+	    function_name_prefix="logzio_${function_name}"
     fi
 
-    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Added permission to run function."
+    if gcloud functions describe $function_name_prefix --region=$gcp_region &> /dev/null; then
+        delete_code=$(gcloud functions delete $function_name_prefix --region=$gcp_region --quiet || true)
+        if [[ $? -ne 0 ]]; then
+            echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to remove Cloud Function."
+        else 
+            echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Cloud Function: $function_name_prefix removed."
+        fi
+    else
+        echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Cloud Function: $function_name_prefix not found."
+    fi
 }
 
 
-
-# Error:
-#   Exit Code 1
-function create_service_account_to_run_func(){
-    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Add permission to run function ..."
+# Remove existing Service Account
+function remove_service_account(){
     clean_function_name=${function_name//[^[:alnum:]]/}
-
     account_name="${clean_function_name:0:25}acc"
     is_service_account="$(gcloud iam service-accounts list --filter=$account_name@$project_id.iam.gserviceaccount.com --format="value(email)")"
     if [ ! -z "$is_service_account" ]
     then
-      delete_service_account_to_run_func
+        delete_code=$(gcloud iam service-accounts delete ${account_name}@${project_id}.iam.gserviceaccount.com --quiet || true)
+        if [[ $? -ne 0 ]]; then
+            echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to remove existing Service account: $account_name ."
+        else
+            echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Service account: $account_name removed."
+        fi
+    else
+        echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Service account: $account_name not found."
     fi
 
-    gcloud iam service-accounts create ${account_name}
-    if [[ $? -ne 0 ]]; then
-        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to Create service account."
-        exit 1
-    fi
-
-    gcloud projects add-iam-policy-binding ${project_id} --member serviceAccount:${account_name}@${project_id}.iam.gserviceaccount.com --role roles/cloudfunctions.invoker
-    if [[ $? -ne 0 ]]; then
-        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to add permissions to service account."
-        exit 1
-    fi
-
-    gcloud projects add-iam-policy-binding ${project_id} --member serviceAccount:${account_name}@${project_id}.iam.gserviceaccount.com --role roles/compute.viewer
-    if [[ $? -ne 0 ]]; then
-        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to add permissions to service account."
-        exit 1
-    fi
-
-    gcloud projects add-iam-policy-binding ${project_id} --member serviceAccount:${account_name}@${project_id}.iam.gserviceaccount.com --role roles/monitoring.viewer
-    if [[ $? -ne 0 ]]; then
-        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to add permissions to service account."
-        exit 1
-    fi
-    gcloud projects add-iam-policy-binding ${project_id} --member serviceAccount:${account_name}@${project_id}.iam.gserviceaccount.com --role roles/cloudasset.viewer
-    if [[ $? -ne 0 ]]; then
-        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to add permissions to service account."
-        exit 1
-    fi
-    create_credentials_file
-    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Added permission to run function."
 }
 
-# Copy credentials file
 
+# Create Service Account to run function
+function create_service_account(){
+    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Create service account to run function ..."
+
+    clean_function_name=${function_name//[^[:alnum:]]/}
+    account_name="${clean_function_name:0:25}acc"
+    
+    cmd_create_service_account="gcloud iam service-accounts create ${account_name}"
+    echo "$cmd_create_service_account"
+    gcloud iam service-accounts create ${account_name}
+    if [[ $? -ne 0 ]]; then
+        echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to create Service account: $account_name."
+        exit 1
+    else 
+        echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Service account: $account_name created."    
+    fi
+
+    roles=("roles/cloudscheduler.serviceAgent" "roles/cloudfunctions.invoker" "roles/compute.viewer" "roles/monitoring.viewer" "roles/cloudasset.viewer" "roles/run.admin")
+
+    for role in "${roles[@]}"; do
+        gcloud projects add-iam-policy-binding ${project_id} --member serviceAccount:${account_name}@${project_id}.iam.gserviceaccount.com --role ${role}
+        if [[ $? -ne 0 ]]; then
+            echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to add ${role} to service account."
+            exit 1
+        fi
+    done
+
+    create_credentials_file
+    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Added permissions to service account."
+}
+
+
+# Copy credentials file
 function create_credentials_file(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Create credentials-file."
 
@@ -391,7 +402,7 @@ function create_credentials_file(){
 function add_scheduler(){
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Add Job Scheduler for run Cloud Function ..."
     
-    job_name="${function_name}_${function_name_hash}_job"
+    job_name="${function_name}_job"
 
     is_job_scheduler="$(gcloud scheduler jobs list  --location=$gcp_region --filter=$job_name)"
     if [ ! -z "$is_job_scheduler" ]
@@ -414,68 +425,103 @@ function add_scheduler(){
     fi
 
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Added Job Scheduler for run Cloud Function."
+
 }
 
- 
-# Init script with proper message and display active user account
 
+# Remove existing Job Scheduler
+function remove_scheduler(){
+    job_name="${function_name}_job"
+    if gcloud scheduler jobs describe $job_name --location=$gcp_region &> /dev/null; then
+        delete_code=$(gcloud scheduler jobs delete $job_name --location=$gcp_region --quiet || true)
+        if [[ $? -ne 0 ]]; then
+            echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to remove existing Job Scheduler: $job_name."
+        else
+            echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Job Scheduler: $job_name removed."
+        fi
+    else
+        echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Job Scheduler: $job_name not found."
+    fi
+}
+ 
+
+# Init script with proper message and display active user account
 function gcloud_init_confs(){
     user_active_account="$(gcloud auth list --filter=status:ACTIVE --format="value(account)")"
     echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Your active account [${user_active_account}]"
-    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Choose Project ID"
-    _choose_and_set_project_id
-	echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Project ID was updated."
 }
 
 
 # Choose and set project id
 # Error:
 #   Exit Code 1
-function _choose_and_set_project_id(){
+function choose_and_set_project_id(){
     array_projects=()
-    project_id=""
+    selected_projects=()
     count=0
-    for project in  $(gcloud projects list --format="value(projectId)")
+    echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Choose and set project ids ..."
+    # List all projects and store them in an array
+    for project in $(gcloud projects list --format="value(projectId)")
     do
         count=$((count + 1))
         echo "[$count]:  $project"
         array_projects+=("$project")
     done
-    read -p "Please specify the project for integration deployment by referring to the project's numerical position in the list: " mainmenuinput
-    count_projects=0
-    for value in "${array_projects[@]}"
-    do
-        count_projects=$((count_projects + 1))
-        if [ "$mainmenuinput" = "$count_projects" ]; then
-            project_id=$value
-            gcloud config set project $project_id
-            if [[ $? -ne 0 ]]; then
-                echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to create Cloud Function."
-                exit 1
+    # Add the option to deploy to all projects
+    echo "[$((count + 1))]:  All Projects"
+
+    # Prompt the user to select multiple projects
+    read -p "Please fill in the project index numbers of the projects where you would like the integration to be deployed, separated by spaces (or type 'all' to select all projects): " -a mainmenuinput
+
+    # Validate and store selected projects
+if [[ "${mainmenuinput[0]}" == "all" || "${mainmenuinput[0]}" -eq $((count + 1)) ]]; then
+        selected_projects=("${array_projects[@]}")
+    else
+        for input in "${mainmenuinput[@]}"
+        do
+            if [[ $input -ge 1 && $input -le $count ]]; then
+                selected_projects+=("${array_projects[$((input-1))]}")
+            else
+                echo -e "\\n[WARNING] [$(date +"%Y-%m-%d %H:%M:%S")] Invalid selection: $input. Please enter values between 1 and $count, or type 'all'."
+                choose_and_set_project_id
+                return
             fi
-            echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Integration will be launch in Project ID=$project_id"
-        fi
-    done
-
-    if [[ "$project_id" = "" ]]; then
-        echo -e "\\n[WARNING] [$(date +"%Y-%m-%d %H:%M:%S")] Please try again and  enter value between 1 and $count"  
-        _choose_and_set_project_id  
+        done
     fi
+}
 
+
+# Deploy resources to the selected projects
+function deploy_resources_to_projects() {
+    for project_id in "${selected_projects[@]}"
+    do
+        gcloud config set project $project_id
+        if [[ $? -ne 0 ]]; then
+            echo -e "[ERROR] [$(date +"%Y-%m-%d %H:%M:%S")] Failed to set project $project_id."
+            exit 1
+        fi
+        echo -e "[INFO] [$(date +"%Y-%m-%d %H:%M:%S")] Setting up Logz.io integration resources in Project ID: '$project_id'..."
+        
+        # Call the functions to cleanup resources
+        remove_cloud_function $project_id
+        remove_scheduler $project_id
+        remove_service_account $project_id
+
+        # Call the functions to create resources
+        create_service_account  $project_id
+        enable_cloudfunction_api
+        enable_monitoring_api        
+        create_cloud_function $project_id
+        add_scheduler $project_id
+    done
 }
 
 # Initialize flow
 is_gcloud_install
 gcloud_init_confs
-
 get_arguments "$@"
 download_Telegraf
-
 build_string_metric_type
 populate_data
-
-create_service_account_to_run_func
-enable_cloudfunction_api
-enable_monitoring_api
-create_function
-add_scheduler
+choose_and_set_project_id
+deploy_resources_to_projects
